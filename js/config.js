@@ -5,7 +5,7 @@
  *  · 전시 제목/기간 : CONFIG.exhibition
  *  · 공간 크기      : CONFIG.space      (홀·입구 크기, 시작 위치)
  *  · 카메라/조작    : CONFIG.camera / CONFIG.player
- *  · 캐릭터 색·형태 : CONFIG.avatar     (색만 바꾸면 됩니다. 형태는 js/avatar.js)
+ *  · 캐릭터 색·형태 : CONFIG.avatar     (mode·forms·glow. 형태는 js/avatar.js)
  *  · 색상 테마      : CONFIG.theme
  *  · 작가 4명       : CONFIG.artists    (name, line)
  *
@@ -67,14 +67,38 @@ export const CONFIG = {
   },
 
   avatar: {
-    // 사람 실루엣 캐릭터. 얼굴·옷 디테일 없이 실루엣만.
+    // 기본으로 세울 캐릭터: 'prism' | 'cylinder' | 'slab' | 'human'
+    // (주소에 ?avatar=cylinder 처럼 붙이면 그 캐릭터로 열립니다)
+    mode: 'prism',
+
+    // 공통 색 — 사람·오브제 모두 같은 톤을 씁니다.
     color: 0x2e2e34, // 몸 색
     rimColor: 0xc9a86a, // 실루엣 테두리(림) 색 — 배경과 구분용, 아주 약하게
     rimOpacity: 0.4,
-    height: 1.72, // m (머리끝)
+    height: 1.72, // 사람 실루엣 키(m)
     bob: 0.022, // 걸을 때 상하 흔들림
-    swing: 0.62, // 팔다리 스윙 각도(rad)
+    swing: 0.62, // 사람 팔다리 스윙 각도(rad)
     shadowOpacity: 0.42, // 발밑 가짜 그림자
+
+    // 추상 오브제 3종의 비례 (단위 m)
+    //   height 높이 · width 폭 · depth 두께 · spin 자기 축 회전 속도(rad/s) · tilt 기울기(rad)
+    forms: {
+      prism: { height: 1.66, width: 0.42, depth: 0.26, spin: 0.2 },
+      cylinder: { height: 1.62, width: 0.44, taper: 0.92, spin: 0.14 },
+      slab: { height: 1.74, width: 0.6, depth: 0.07, spin: 0.26, tilt: 0.13, tiltX: 0.05 },
+    },
+
+    // 상단(머리)에서 새어 나오는 빛 — 발광 구 + 약한 포인트 라이트 1개
+    glow: {
+      color: 0xffe6b8, // 빛 색(구·빛 틈·후광)
+      coreSize: 0.055, // 발광 구 반지름(m)
+      haloSize: 0.55, // 후광 크기(m)
+      haloOpacity: 0.55,
+      lightColor: 0xffcf96, // 포인트 라이트 색
+      lightIntensity: 0.85,
+      lightDistance: 3.0, // 빛이 닿는 거리(m)
+      pulse: 0.18, // 빛 떨림 정도 (0 = 고정)
+    },
   },
 
   interaction: {

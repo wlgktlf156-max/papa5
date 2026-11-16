@@ -51,7 +51,7 @@ papa5/
     main.js             시작점, 렌더 루프, 근접 감지, 상호작용
     hall.js             홀·벽·천장·조명·입구·제목 벽·안내판·벤치
     artworks.js         액자 걸기(벽 배치), 사진 찾기, 하이라이트
-    avatar.js           사람 실루엣 캐릭터 + 걷기 애니메이션
+    avatar.js           관람객 캐릭터(추상 오브제 3종 + 사람)와 움직임
     controls.js         3인칭 이동·카메라·충돌, 키보드/마우스/조이스틱
     ui.js               로딩·입장 화면·작품 안내·카드·폴백
     textures.js         한글 간판·라벨·임시 작품 이미지를 캔버스로 그림
@@ -142,14 +142,22 @@ camera: { fov: 60, distance: 4.0, targetHeight: 1.52, pitch: 0.16, ... }
 avatar: { color: 0x2e2e34, rimColor: 0xc9a86a, height: 1.72, bob: 0.022, swing: 0.62 }
 theme:  { wall, floor, ceiling, frame, mat, bench, accent, fog ... }
 ```
-- 캐릭터는 **얼굴·옷 디테일 없이 실루엣만** 유지합니다. 색(`color`)과 테두리 색(`rimColor`)만
-  바꿀 수 있고, 형태를 바꾸려면 `js/avatar.js`를 고칩니다.
+- 캐릭터는 **얼굴·옷 디테일 없이 실루엣만** 유지합니다. 색(`color`)·테두리 색(`rimColor`)은
+  그대로 쓰고, 형태는 아래 「캐릭터(관람객) 바꾸는 방법」에서 고릅니다.
 - 벤치 위치·안내판 위치는 `js/hall.js` 안에 있습니다(좌표 주석 참고).
+
+### 캐릭터(관람객) 바꾸는 방법
+- `js/config.js` 의 `avatar.mode` 에 `prism`·`cylinder`·`slab`·`human` 중 하나를 넣으면 기본 캐릭터가 됩니다.
+- 주소 끝에 `?avatar=cylinder` 처럼 붙이면 그 캐릭터로 열립니다(값이 없거나 모르는 값이면 `avatar.mode`).
+- 전시장 오른쪽 아래 `프리즘 / 원기둥 / 판 / 사람` 버튼을 누르면 바로 바뀌고 주소도 함께 바뀝니다.
+- 비례는 `avatar.forms`(height·width·depth·spin·tilt), 상단의 빛은 `avatar.glow`(color·lightColor·lightIntensity·haloSize)에서 조정합니다.
+- 형태 자체를 고치려면 `js/avatar.js` 를 봅니다. `human` 은 이전 사람 실루엣 그대로입니다.
 
 ## 6. 지금 되는 것 / 안 되는 것
 
 **되는 것**
-- 3인칭 추적 카메라 + 사람 실루엣 캐릭터(걷기 시 팔다리 스윙, 상하 흔들림, 발밑 그림자)
+- 3인칭 추적 카메라 + 관람객 캐릭터 — 추상 오브제 3종(프리즘·원기둥·판)과 이전 사람 실루엣,
+  상단에서 새어 나오는 빛, 이동 방향과 별개인 자기 축 회전
 - PC 키보드 이동·마우스 드래그 시점·Shift 달리기 / 모바일 조이스틱·드래그 시점
 - 벽·벤치·안내판 충돌, 카메라 벽 관통 방지(막히면 앞으로 당김)
 - 홀 하나(바닥·천장·벽 4면) + 입구 공간 + 입구 제목 벽(정식 명칭) + '입구/출구' 표지
@@ -171,7 +179,8 @@ theme:  { wall, floor, ceiling, frame, mat, bench, accent, fog ... }
 
 ## 7. 성능 메모
 
-- 그림자 없음, 후처리 없음, 실시간 조명은 **환경광 1 + 스포트 3** 개뿐입니다.
+- 그림자 없음, 후처리 없음, 실시간 조명은 **환경광 1 + 스포트 3 + 캐릭터 상단 빛(포인트) 1** 개뿐입니다.
+  (캐릭터 빛은 `avatar.glow`에서 세기를 0으로 두면 사라집니다)
 - `devicePixelRatio` 상한 2, 세로 화면은 시야각을 조금 넓혀 같은 화면에 더 담습니다.
 - 1초 평균 FPS가 32 미만으로 두 번 떨어지면 픽셀비를 자동으로 0.25씩 낮춥니다.
 - 임시 이미지는 512px 캔버스로 만들어 메모리를 아낍니다. 실제 사진은 1600px·WebP를 쓰고,
@@ -179,6 +188,20 @@ theme:  { wall, floor, ceiling, frame, mat, bench, accent, fog ... }
 - `?debug=1`을 주소에 붙이면 화면 왼쪽 아래에 FPS·좌표·근접 작품이 표시됩니다.
 
 ## 8. 검증 기록
+
+### 2026-11-17 — 3단계: 추상 오브제 아바타 3종 (데-모 참고)
+
+로컬 HTTP 서버로 이 폴더를 그대로 서비스하고 헤드리스 Chromium(Playwright, SwiftShader WebGL)으로 확인.
+
+- 4가지 모드 모두 콘솔 오류 0건 · `__papaErrors` 0건 · HTTP 4xx 0건 · WebGL 정상(그리기 56~74회, 삼각형 604~2,494개)
+- `?avatar=prism`·`cylinder`·`slab`·`human` 4개 주소 모두 해당 캐릭터로 열림, 파라미터가 없으면 `prism`
+- 오른쪽 아래 버튼(프리즘/원기둥/판/사람)으로 즉시 전환 + 주소 갱신, 전환 뒤 드래그 시점 조작도 정상(camYaw 2.64 → 3.22)
+- 오브제 자전은 이동 방향 회전과 별개: 정지 2초에 0.05 rad, 이동 중에도 +0.049 rad 계속 증가
+- 이동: `D` 1.5초 → x 0 → 0.6m, 캐릭터 yaw 0 → −1.47 rad(이동 방향으로 회전)
+- 모바일 390×844: 버튼 46~51×40px, 조이스틱·「작품 보기」와 겹치지 않음, 탭으로 전환 확인
+- 기존 기능 회귀 없음: 작품 17점·근접 감지 17개, 사람 모드 걷기(다리 회전 0.48 rad)
+- 스크린샷: `screenshots/avatar-prism.png` · `avatar-cylinder.png` · `avatar-slab.png` ·
+  `avatar-human.png` (모바일: `avatar-mobile-slab.png`, `avatar-mobile-cylinder.png`)
 
 ### 2026-11-16 — 1단계 빈 전시장 데모
 

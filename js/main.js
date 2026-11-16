@@ -9,7 +9,7 @@ import { UI } from './ui.js';
 import { buildHall } from './hall.js';
 import { buildArtworks, setHighlight } from './artworks.js';
 import { loadWorks } from './works-data.js';
-import { Avatar } from './avatar.js';
+import { Avatar, AVATAR_MODES } from './avatar.js';
 import { ThirdPersonControls } from './controls.js';
 
 const ui = new UI(CONFIG);
@@ -24,6 +24,18 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 const debug = /[?&]debug=1/.test(location.search);
 if (debug) ui.debug.classList.add('show');
+
+/** 주소의 ?avatar=... 로 캐릭터를 고릅니다. 없거나 모르는 값이면 CONFIG.avatar.mode. */
+function avatarFromUrl() {
+  let want = '';
+  try {
+    want = (new URLSearchParams(location.search).get('avatar') || '').toLowerCase();
+  } catch (e) {
+    want = '';
+  }
+  if (AVATAR_MODES.indexOf(want) >= 0) return want;
+  return CONFIG.avatar.mode || 'prism';
+}
 
 function hasWebGL() {
   try {
@@ -132,8 +144,10 @@ async function boot() {
   ui.setProgress(0.86, '관람객을 세우는 중');
   await nextFrame();
 
-  const avatar = new Avatar(scene, renderer);
+  const avatar = new Avatar(scene, renderer, avatarFromUrl());
   app.avatar = avatar;
+  ui.setAvatarMode(avatar.mode);
+  ui.onAvatarMode((m) => applyAvatar(m, true));
 
   const controls = new ThirdPersonControls(camera, canvas, {
     colliders: hall.colliders,
@@ -180,6 +194,23 @@ async function boot() {
   window.addEventListener('orientationchange', () => setTimeout(onResize, 180));
 
   requestAnimationFrame(tick);
+}
+
+/** 캐릭터 전환 — 화면 버튼과 주소 파라미터가 같은 경로를 씁니다 */
+function applyAvatar(mode, updateUrl) {
+  if (!app.avatar) return null;
+  const m = app.avatar.setMode(mode);
+  ui.setAvatarMode(m);
+  if (updateUrl) {
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set('avatar', m);
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    } catch (e) {
+      /* file:// 등 주소를 못 바꾸는 환경 */
+    }
+  }
+  return m;
 }
 
 function enter() {
@@ -401,6 +432,19 @@ window.__papa = {
   },
   get errors() {
     return window.__papaErrors || [];
+  },
+  get renderer() {
+    return app.renderer;
+  },
+  get avatar() {
+    return app.avatar;
+  },
+  get avatarMode() {
+    return app.avatar ? app.avatar.mode : null;
+  },
+  /** 검증용: 캐릭터를 바꾸고 주소(?avatar=...)도 갱신합니다. */
+  setAvatar(mode) {
+    return applyAvatar(mode, true);
   },
   CONFIG,
   ui,

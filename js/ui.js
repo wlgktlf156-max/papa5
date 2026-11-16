@@ -24,6 +24,7 @@ export class UI {
     this.debug = this.$('debug');
     this.toastEl = this.$('toast');
     this.joy = this.$('joy');
+    this.avatarSwitch = this.$('avatar-switch');
 
     this.fill();
     this._bind();
@@ -88,6 +89,27 @@ export class UI {
   onView(cb) {
     if (this.btnView) this.btnView.addEventListener('click', cb);
     if (this.pill) this.pill.addEventListener('click', cb);
+  }
+
+  /** 캐릭터 전환 버튼(프리즘/원기둥/판/사람) */
+  onAvatarMode(cb) {
+    if (!this.avatarSwitch) return;
+    this.avatarSwitch.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.avatarSwitch.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('[data-avatar]') : null;
+      if (!btn) return;
+      cb(btn.getAttribute('data-avatar'));
+    });
+  }
+
+  /** 지금 캐릭터에 해당하는 버튼만 켜 줍니다. */
+  setAvatarMode(mode) {
+    if (!this.avatarSwitch) return;
+    const btns = this.avatarSwitch.querySelectorAll('[data-avatar]');
+    Array.prototype.forEach.call(btns, (b) => {
+      const on = b.getAttribute('data-avatar') === mode;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
   }
 
   onHelpClose(cb) {
