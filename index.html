@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0c0b0a" />
+    <title>파티프로덕션디자인 아카데미(PaPA) 제5회 마친보람맺음전</title>
+    <meta
+      name="description"
+      content="파티프로덕션디자인 아카데미(PaPA) 제5회 마친보람맺음전 — 온라인 3D 전시장"
+    />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three.module.js"
+        }
+      }
+    </script>
+    <script>
+      // 오류 수집(검증용). 화면에는 표시하지 않습니다.
+      window.__papaErrors = [];
+      window.addEventListener('error', function (e) {
+        window.__papaErrors.push(String((e && e.message) || 'error'));
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        window.__papaErrors.push('unhandledrejection: ' + String(e && e.reason));
+      });
+      (function () {
+        var orig = console.error;
+        console.error = function () {
+          try {
+            window.__papaErrors.push(Array.prototype.map.call(arguments, String).join(' '));
+          } catch (err) {}
+          orig.apply(console, arguments);
+        };
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" role="img" aria-label="3D 전시장 화면"></canvas>
+
+      <!-- 화면 위 안내 -->
+      <div id="hud">
+        <div class="hud-top">
+          <div class="hud-brand" id="hud-title">
+            파티프로덕션디자인 아카데미(PaPA) 제5회 마친보람맺음전
+          </div>
+          <div class="hud-actions">
+            <button id="btn-help" class="icon-btn" aria-label="조작 안내">?</button>
+          </div>
+        </div>
+        <div class="hud-bottom">
+          <div id="hint-desktop" class="hint">
+            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동 · 드래그로 시점 · <kbd>Shift</kbd> 빠르게 ·
+            작품 앞에서 <kbd>E</kbd>
+          </div>
+        </div>
+      </div>
+
+      <!-- 모바일 조이스틱 -->
+      <div id="joy" aria-hidden="true"><div class="stick"></div></div>
+
+      <!-- 작품 근접 안내 (작품 위에 뜨는 버튼) -->
+      <button id="pill" class="pill" hidden>
+        <span class="pill-dot"></span>
+        <span class="pill-text"><b id="pill-title">작품</b><i id="pill-artist">작가</i></span>
+        <span class="pill-key" id="pill-key">E</span>
+      </button>
+
+      <!-- 모바일용 큰 버튼 -->
+      <button id="btn-view" class="btn-view" hidden>작품 보기</button>
+
+      <!-- 작품 정보 카드 (확대 감상은 다음 단계) -->
+      <div id="card" class="card" hidden>
+        <button class="card-close" id="card-close" aria-label="닫기">×</button>
+        <p class="card-artist" id="card-artist"></p>
+        <h3 class="card-title" id="card-title"></h3>
+        <dl class="card-meta">
+          <div><dt>연도</dt><dd id="card-year"></dd></div>
+          <div><dt>크기</dt><dd id="card-size"></dd></div>
+          <div><dt>재료</dt><dd id="card-media"></dd></div>
+        </dl>
+        <p class="card-note">확대 감상 화면은 다음 단계에서 연결됩니다.</p>
+      </div>
+
+      <!-- 첫 방문 안내 -->
+      <div id="first-hint" class="first-hint" hidden>
+        <p id="first-hint-text"></p>
+        <button id="first-hint-close" aria-label="닫기">×</button>
+      </div>
+
+      <div id="toast" class="toast"></div>
+      <div id="debug"></div>
+
+      <!-- 로딩 -->
+      <div id="loading">
+        <div class="load-inner">
+          <p class="load-kicker">PaPA ANNUAL EXHIBITION</p>
+          <p class="load-title" id="load-title">
+            파티프로덕션디자인 아카데미(PaPA) 제5회 마친보람맺음전
+          </p>
+          <div class="bar"><i id="load-bar"></i></div>
+          <div class="load-meta">
+            <span id="load-stage">전시장을 준비하고 있습니다</span>
+            <span id="load-pct">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 입장 화면 -->
+      <section id="entry" hidden>
+        <div class="poster">
+          <p class="kicker" id="entry-kicker">PaPA ANNUAL EXHIBITION</p>
+          <h1 id="entry-t1">파티프로덕션디자인 아카데미(PaPA)</h1>
+          <h2 id="entry-t2">제5회 마친보람맺음전</h2>
+          <div class="poster-rule"></div>
+          <p class="period" id="entry-period"></p>
+          <p class="place" id="entry-place"></p>
+          <p class="artists" id="entry-artists"></p>
+
+          <div class="entry-controls" id="entry-controls">
+            <div class="ctrl-row">
+              <b>PC</b>
+              <span
+                ><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동 · 마우스 드래그로 시점 ·
+                <kbd>Shift</kbd> 빠르게 · 작품 앞에서 <kbd>E</kbd></span
+              >
+            </div>
+            <div class="ctrl-row">
+              <b>모바일</b>
+              <span>왼쪽 조이스틱으로 이동 · 화면을 드래그해 시점 · <kbd>작품 보기</kbd> 버튼</span>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="btn-enter">입장하기</button>
+          <p class="fine" id="entry-note"></p>
+        </div>
+      </section>
+
+      <!-- 3D를 못 켤 때 -->
+      <div id="fallback" hidden>
+        <div class="fb-inner">
+          <p class="kicker">3D 전시장</p>
+          <h1 id="fb-title">파티프로덕션디자인 아카데미(PaPA) 제5회 마친보람맺음전</h1>
+          <p class="fb-msg">
+            이 브라우저에서는 3D 전시장을 열 수 없습니다. <span id="fb-reason"></span>
+          </p>
+          <p class="fb-meta" id="fb-count"></p>
+          <p class="fb-meta" id="fb-artists"></p>
+          <p class="fine">크롬·사파리·엣지 최신 버전에서 다시 열어 주세요.</p>
+        </div>
+      </div>
+    </div>
+
+    <noscript>
+      <p style="padding: 24px; color: #f4efe6; font-family: sans-serif">
+        이 전시는 JavaScript가 필요합니다. 브라우저에서 JavaScript를 켜고 다시 열어 주세요.
+      </p>
+    </noscript>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
