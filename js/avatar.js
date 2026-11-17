@@ -192,7 +192,7 @@ export class Avatar {
     // 머리카락 — 머리 위쪽만 덮는 낮은 해상도의 반구
     const hair = addPart(
       head,
-      new THREE.SphereGeometry(0.159, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.44),
+      new THREE.SphereGeometry(0.159, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.47),
       M.hair,
       0,
       0.145,
@@ -204,8 +204,8 @@ export class Avatar {
     const eyeGeo = sph(0.016, 6, 4);
     const glintGeo = sph(0.005, 5, 3);
     for (const sx of [-1, 1]) {
-      addPart(head, eyeGeo, M.eye, sx * 0.045, 0.116, -0.146, [1, 1.15, 0.5]);
-      addPart(head, glintGeo, M.glint, sx * 0.0495, 0.123, -0.1545, [1, 1, 0.6]);
+      addPart(head, eyeGeo, M.eye, sx * 0.045, 0.127, -0.145, [1, 1.15, 0.5]);
+      addPart(head, glintGeo, M.glint, sx * 0.0495, 0.134, -0.1535, [1, 1, 0.6]);
     }
 
     /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
@@ -214,8 +214,8 @@ export class Avatar {
       pivot.position.set(side * 0.14 * S, 0.755 * S, 0);
       pivot.rotation.z = side * 0.2; // 팔을 살짝 벌립니다
       body.add(pivot);
-      addPart(pivot, cyl(0.036, 0.031, 0.22), M.shirt, 0, -0.11, 0);
-      addPart(pivot, sph(0.038, 6, 4), M.skin, 0, -0.225, 0);
+      addPart(pivot, cyl(0.036, 0.032, 0.21), M.shirt, 0, -0.105, 0);
+      addPart(pivot, sph(0.04, 6, 4), M.skin, 0, -0.246, 0);
       return pivot;
     };
     const armL = makeArm(-1);
