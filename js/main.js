@@ -25,7 +25,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const debug = /[?&]debug=1/.test(location.search);
 if (debug) ui.debug.classList.add('show');
 
-/** 주소의 ?avatar=... 로 캐릭터를 고릅니다. 없거나 모르는 값이면 CONFIG.avatar.mode. */
+/** 주소의 ?avatar=... 로 캐릭터를 고릅니다(기본 lowpoly, 롤백은 human). 모르는 값이면 기본값. */
 function avatarFromUrl() {
   let want = '';
   try {
@@ -34,7 +34,7 @@ function avatarFromUrl() {
     want = '';
   }
   if (AVATAR_MODES.indexOf(want) >= 0) return want;
-  return CONFIG.avatar.mode || 'prism';
+  return CONFIG.avatar.mode || 'lowpoly';
 }
 
 function hasWebGL() {
@@ -146,8 +146,6 @@ async function boot() {
 
   const avatar = new Avatar(scene, renderer, avatarFromUrl());
   app.avatar = avatar;
-  ui.setAvatarMode(avatar.mode);
-  ui.onAvatarMode((m) => applyAvatar(m, true));
 
   const controls = new ThirdPersonControls(camera, canvas, {
     colliders: hall.colliders,
@@ -196,11 +194,10 @@ async function boot() {
   requestAnimationFrame(tick);
 }
 
-/** 캐릭터 전환 — 화면 버튼과 주소 파라미터가 같은 경로를 씁니다 */
+/** 캐릭터 전환 — 주소 파라미터와 검증용 핸들이 같은 경로를 씁니다(화면 버튼은 없음) */
 function applyAvatar(mode, updateUrl) {
   if (!app.avatar) return null;
   const m = app.avatar.setMode(mode);
-  ui.setAvatarMode(m);
   if (updateUrl) {
     try {
       const url = new URL(location.href);

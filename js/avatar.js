@@ -1,31 +1,30 @@
 /**
  * 관람객 캐릭터 — 외부 모델 파일(GLB) 없이 코드 지오메트리로만 만듭니다.
  *
- *  · 추상 오브제 3종 (데-모 참고)
- *      prism    — 사각기둥(모노리스형). 가장 기본.
- *      cylinder — 원기둥. 더 부드럽고 조용한 인상.
- *      slab     — 기울어진 얇은 판. 가장 조형적.
- *    얼굴·이목구비 없이 단색 실루엣으로만 읽히고, 상단에서 빛이 새어 나옵니다.
- *    각 오브제는 이동 방향 회전(root.rotation.y)과 별개로 자기 축으로 천천히 돕니다.
+ *  · lowpoly (지금 쓰는 캐릭터)
+ *      작은 키에 머리가 조금 큰 로우폴리 인체(기본 1.20m, 머리 지름이 키의 1/4 안팎 → 약 4등신).
+ *      면은 낮게(전체 300개 안팎) 두고 flatShading 으로 폴리곤 면을 살립니다.
+ *      파스텔 톤 + 낮은 해상도의 둥근 형태라 각이 공격적이지 않고, 점 눈 두 개로 표정은 최소.
+ *      머리 위 따뜻한 점광 1개 + 발밑 가짜 그림자 (기존 아바타와 같은 연출).
+ *      정지 = 팔을 살짝 벌리고 서서 아주 얕게 숨쉬기 / 이동 = 짧은 팔다리 스윙 + 가벼운 통통 튐.
  *
- *  · human — 이전 단계의 사람 실루엣(비교용). 형태·애니메이션을 그대로 유지합니다.
+ *  · human (롤백용)
+ *      이전 단계의 사람 실루엣. 화면에 버튼이 없고, 되돌릴 때만 주소에
+ *      `?avatar=human` 을 붙여 봅니다. 키·형태·애니메이션은 그대로입니다.
  *
- * 전환: setMode('prism' | 'cylinder' | 'slab' | 'human')
- * 비례·발광 설정: js/config.js 의 CONFIG.avatar.forms / CONFIG.avatar.glow
+ * 전환: setMode('lowpoly' | 'human') — 기본값은 js/config.js 의 CONFIG.avatar.mode
+ * 비례·색: CONFIG.avatar.lowpoly (palette 의 색, height 의 키)
  */
 
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
-import { makeShadowTexture, makeGlowTexture } from './textures.js';
+import { makeShadowTexture } from './textures.js';
 
-const H_REF = 1.72; // 사람 비례 기준 키(m)
-export const AVATAR_MODES = ['prism', 'cylinder', 'slab', 'human'];
-export const AVATAR_LABELS = {
-  prism: '프리즘',
-  cylinder: '원기둥',
-  slab: '판',
-  human: '사람',
-};
+const H_REF = 1.72; // 사람 비례 기준 키(m) — human 실루엣용
+const LP_BASE_H = 1.20; // 아래 lowpoly 수치를 적은 기준 키(m)
+
+/** 주소(?avatar=)로 고를 수 있는 모드. 화면에 전환 UI 는 없습니다. */
+export const AVATAR_MODES = ['lowpoly', 'human'];
 
 export class Avatar {
   constructor(scene, renderer, mode) {
@@ -58,16 +57,26 @@ export class Avatar {
       opacity: cfg.rimOpacity,
       depthWrite: false,
     });
-    this.glowMat = new THREE.MeshBasicMaterial({
-      color: cfg.glow.color,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    this.glowTex = makeGlowTexture(THREE, 'rgba(255,228,176,0.85)', renderer);
 
-    // 오브제 상단의 빛: 포인트 라이트 1개를 공유합니다(모드별로 세기만 조절).
+    // lowpoly 재질 — 파스텔 + 면이 각지게(flatShading), 광택은 없앱니다
+    const pal = (cfg.lowpoly && cfg.lowpoly.palette) || {};
+    const surface = (color) =>
+      new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.92,
+        metalness: 0,
+        flatShading: true,
+      });
+    this.mats = {
+      skin: surface(pal.skin != null ? pal.skin : 0xf1ddc7),
+      shirt: surface(pal.shirt != null ? pal.shirt : 0xa7bccb),
+      pants: surface(pal.pants != null ? pal.pants : 0x6f8290),
+      hair: surface(pal.hair != null ? pal.hair : 0x6e5a49),
+      shoe: surface(pal.shoe != null ? pal.shoe : 0x3f4750),
+      eye: surface(pal.eye != null ? pal.eye : 0x2b2724),
+    };
+
+    // 머리 위의 빛: 포인트 라이트 1개를 공유합니다(모드별로 세기만 조절).
     this.light = new THREE.PointLight(
       cfg.glow.lightColor,
       0,
@@ -75,7 +84,6 @@ export class Avatar {
       2
     );
     this.body.add(this.light);
-    this.lightBase = cfg.glow.lightIntensity;
 
     // 발밑 가짜 그림자
     const shadowTex = makeShadowTexture(THREE, cfg.shadowOpacity || 0.4, renderer);
@@ -91,7 +99,7 @@ export class Avatar {
     this.shadow.position.y = 0.012;
     this.root.add(this.shadow);
 
-    this.forms = {}; // mode -> { group, spin, ... }
+    this.forms = {}; // mode -> { group, ... }
     this.active = null;
     this.mode = null;
     this.visibleAll = true;
@@ -100,31 +108,26 @@ export class Avatar {
     this.amp = 0;
     this.time = 0;
 
-    this.setMode(mode || cfg.mode || 'prism');
+    this.setMode(mode || cfg.mode || 'lowpoly');
   }
 
   /* ── 모드 전환 ─────────────────────────────────────────── */
   setMode(mode) {
-    const next = AVATAR_MODES.indexOf(mode) >= 0 ? mode : 'prism';
+    const next = AVATAR_MODES.indexOf(mode) >= 0 ? mode : AVATAR_MODES[0];
     if (next === this.mode) return this.mode;
 
     if (!this.forms[next]) {
-      this.forms[next] = next === 'human' ? this._buildHuman() : this._buildObject(next);
+      this.forms[next] =
+        next === 'human' ? this._buildHuman() : this._buildLowpoly();
       this.body.add(this.forms[next].group);
     }
     if (this.active) this.active.group.visible = false;
     this.active = this.forms[next];
     this.active.group.visible = this.visibleAll;
 
-    const obj = next !== 'human' ? this.active : null;
-    if (obj) {
-      this.light.position.set(0, obj.lightHeight, 0);
-      this.light.intensity = this.lightBase;
-      this.shadow.scale.setScalar(obj.shadowScale);
-    } else {
-      this.light.intensity = 0;
-      this.shadow.scale.setScalar(this.active.shadowScale || 1);
-    }
+    this.light.position.set(0, this.active.lightHeight, 0);
+    this.light.intensity = this.active.lightIntensity || 0;
+    this.shadow.scale.setScalar(this.active.shadowScale || 1);
 
     this.mode = next;
     this.time = 0;
@@ -133,121 +136,102 @@ export class Avatar {
     return this.mode;
   }
 
-  /* ── 추상 오브제 3종 ──────────────────────────────────── */
-  _buildObject(mode) {
+  /* ── 로우폴리 인체 (지금 쓰는 관람객 캐릭터) ─────────────── */
+  _buildLowpoly() {
     const cfg = CONFIG.avatar;
-    const f = cfg.forms[mode] || cfg.forms.prism;
-    const H = f.height || 1.66;
-    const W = f.width || 0.44;
-    const D = f.depth != null ? f.depth : W;
+    const lp = cfg.lowpoly || {};
+    const H = lp.height || LP_BASE_H;
+    const S = H / LP_BASE_H; // 아래 수치는 LP_BASE_H 기준, 키 설정에 맞춰 배율만 곱합니다
+    const M = this.mats;
+    const rimMat = this.rimMat;
 
     const group = new THREE.Group();
-    group.name = 'avatar-' + mode;
-    const spin = new THREE.Group(); // 자기 축 회전(이동 방향 회전과 별개)
+    group.name = 'avatar-lowpoly';
+    const spin = new THREE.Group(); // 사람은 자전하지 않습니다(형태 유지)
     group.add(spin);
+    const body = spin;
 
-    /* 판(slab)은 살짝 기울여 세우므로, 몸체·빛 틈·빛구를 한 그룹에 담아 함께 기웁니다 */
-    const tilt = new THREE.Group();
-    spin.add(tilt);
-    if (mode === 'slab') {
-      tilt.rotation.z = f.tilt != null ? f.tilt : 0.13;
-      tilt.rotation.x = (f.tiltX != null ? f.tiltX : 0.05);
-    }
+    // 낮은 해상도 기본형 — 면이 보이도록 segment 를 최소로
+    const cyl = (rt, rb, h, seg = 6) => new THREE.CylinderGeometry(rt, rb, h, seg, 1);
+    const sph = (r, w = 7, h = 5) => new THREE.SphereGeometry(r, w, h);
 
-    let mesh;
-    let bandY = H * 0.87;
-    let bandGeom;
+    const addPart = (parent, geom, mat, x, y, z, scale, shell = false) => {
+      const m = new THREE.Mesh(geom, mat);
+      m.position.set(x * S, y * S, z * S);
+      if (scale) m.scale.set(scale[0] * S, scale[1] * S, scale[2] * S);
+      else m.scale.setScalar(S);
+      parent.add(m);
+      if (shell) {
+        const sh = new THREE.Mesh(geom, rimMat);
+        sh.scale.setScalar(1.05);
+        sh.renderOrder = -1;
+        m.add(sh);
+      }
+      return m;
+    };
 
-    if (mode === 'cylinder') {
-      const taper = f.taper != null ? f.taper : 0.92;
-      const rBot = W / 2;
-      const rTop = rBot * taper;
-      mesh = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, H, 28, 1), this.bodyMat);
-      mesh.position.y = H / 2;
-      const rBand = (rBot + (rTop - rBot) * 0.87) * 1.012;
-      bandGeom = new THREE.CylinderGeometry(rBand, rBand, 0.012, 28, 1, true);
-    } else if (mode === 'slab') {
-      mesh = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.bodyMat);
-      mesh.position.y = H / 2;
-      bandGeom = new THREE.BoxGeometry(W * 0.985, 0.012, D * 2.4);
-    } else {
-      // prism — 사각기둥(모노리스)
-      mesh = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.bodyMat);
-      mesh.position.y = H / 2;
-      bandGeom = new THREE.BoxGeometry(W * 1.02, 0.012, D * 1.02);
-    }
+    /* 몸통 — 위아래가 둥근 달걀형(통통하게), 0.42 ~ 0.86 */
+    const torso = addPart(body, sph(0.17, 7, 5), M.shirt, 0, 0.64, 0, [1, 1.3, 0.88], true);
 
-    tilt.add(mesh);
+    /* 다리 — 짧고 통통하게. 골반(0.44)에서 회전 */
+    const makeLeg = (side) => {
+      const pivot = new THREE.Group();
+      pivot.position.set(side * 0.072 * S, 0.44 * S, 0);
+      body.add(pivot);
+      addPart(pivot, cyl(0.058, 0.05, 0.38), M.pants, 0, -0.19, 0);
+      const foot = addPart(pivot, new THREE.BoxGeometry(0.1, 0.06, 0.16), M.shoe, 0, -0.41, -0.018);
+      foot.rotation.x = -0.02;
+      return pivot;
+    };
+    const legL = makeLeg(-1);
+    const legR = makeLeg(1);
 
-    // 실루엣 테두리(뒷면 셸)
-    const shell = new THREE.Mesh(mesh.geometry, this.rimMat);
-    shell.scale.setScalar(1.035);
-    shell.renderOrder = -1;
-    mesh.add(shell);
-
-    // 판은 기울인 만큼 바닥에 닿도록 정확히 올립니다
-    if (mode === 'slab') {
-      tilt.updateMatrixWorld(true);
-      const bb = new THREE.Box3().setFromObject(mesh);
-      tilt.position.y = -bb.min.y;
-    }
-
-    /* 상단에서 새어 나오는 빛 */
-    const glow = new THREE.Group();
-    glow.position.y = mode === 'slab' ? H + 0.09 : H + 0.01;
-    (mode === 'slab' ? tilt : spin).add(glow);
-
-    const core = new THREE.Mesh(
-      new THREE.SphereGeometry(cfg.glow.coreSize || 0.055, 14, 10),
-      this.glowMat
+    /* 머리 — 목(0.90)에서 회전. 머리 지름 0.29 = 키의 약 1/4 */
+    const head = new THREE.Group();
+    head.position.y = 0.9 * S;
+    body.add(head);
+    addPart(head, cyl(0.045, 0.052, 0.07), M.skin, 0, -0.005, 0); // 목
+    addPart(head, sph(0.145, 7, 5), M.skin, 0, 0.145, 0, [1, 1, 0.98], true); // 머리
+    // 머리카락 — 머리 위쪽만 덮는 낮은 해상도의 반구
+    const hair = addPart(
+      head,
+      new THREE.SphereGeometry(0.152, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.56),
+      M.hair,
+      0,
+      0.145,
+      0,
+      [1, 1, 1]
     );
-    core.renderOrder = 2;
-    glow.add(core);
+    hair.rotation.x = -0.04;
+    // 점 눈 두 개 (표정은 이게 전부)
+    const eyeGeo = sph(0.023, 5, 3);
+    addPart(head, eyeGeo, M.eye, -0.052, 0.147, -0.126, [1, 1.2, 0.55]);
+    addPart(head, eyeGeo, M.eye, 0.052, 0.147, -0.126, [1, 1.2, 0.55]);
 
-    const halo = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: this.glowTex,
-        color: cfg.glow.color,
-        transparent: true,
-        opacity: cfg.glow.haloOpacity != null ? cfg.glow.haloOpacity : 0.55,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      })
-    );
-    halo.scale.setScalar(cfg.glow.haloSize || 0.55);
-    halo.renderOrder = 3;
-    glow.add(halo);
-
-    // 빛이 새는 얇은 틈(상단 부근)
-    const band = new THREE.Mesh(
-      bandGeom,
-      new THREE.MeshBasicMaterial({
-        color: cfg.glow.color,
-        transparent: true,
-        opacity: 0.85,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      })
-    );
-    band.position.y = bandY;
-    band.renderOrder = 1;
-    tilt.add(band);
+    /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
+    const makeArm = (side) => {
+      const pivot = new THREE.Group();
+      pivot.position.set(side * 0.15 * S, 0.8 * S, 0);
+      pivot.rotation.z = side * 0.24; // 팔을 살짝 벌립니다
+      body.add(pivot);
+      addPart(pivot, cyl(0.046, 0.04, 0.28), M.shirt, 0, -0.14, 0);
+      addPart(pivot, sph(0.047, 6, 4), M.skin, 0, -0.295, 0);
+      return pivot;
+    };
+    const armL = makeArm(-1);
+    const armR = makeArm(1);
 
     return {
       group,
       spin,
-      core,
-      halo,
-      band,
-      lightHeight: H * 0.9,
-      shadowScale: mode === 'slab' ? 0.78 : 0.82,
-      spinRate: f.spin != null ? f.spin : 0.2,
-      bobScale: mode === 'slab' ? 0.5 : 0.65,
+      lowpoly: { body, torso, head, armL, armR, legL, legR, torsoBaseY: 1.3 * S },
+      lightHeight: H + 0.05,
+      lightIntensity: lp.lightIntensity != null ? lp.lightIntensity : cfg.glow.lightIntensity,
+      shadowScale: H / H_REF * 0.95,
     };
   }
 
-  /* ── 사람 실루엣 (이전 단계 그대로) ─────────────────────── */
+  /* ── 사람 실루엣 (롤백용, 이전 단계 그대로) ─────────────── */
   _buildHuman() {
     const cfg = CONFIG.avatar;
     const S = (cfg.height || H_REF) / H_REF;
@@ -320,6 +304,7 @@ export class Avatar {
       spin,
       human: { body, armL, armR, legL, legR },
       lightHeight: 1.6,
+      lightIntensity: 0, // 실루엣은 빛을 쓰지 않습니다
       shadowScale: 0.95,
     };
   }
@@ -332,12 +317,12 @@ export class Avatar {
 
     const target = Math.min(1, speed / Math.max(0.1, CONFIG.player.walkSpeed));
     this.amp += (target - this.amp) * Math.min(1, dt * 9);
-    this.phase += dt * (2.2 + speed * 2.1);
+    this.phase += dt * (2.2 + speed * 2.4);
 
     if (!this.active) return;
 
     if (this.mode === 'human') this._updateHuman(dt, cfg);
-    else this._updateObject(dt, cfg);
+    else this._updateLowpoly(cfg);
 
     const bob = this._bob || 0;
     this.shadow.scale.setScalar((this.active.shadowScale || 1) * (1 + bob * 1.2));
@@ -363,32 +348,37 @@ export class Avatar {
     this.body.rotation.x = -0.045 * this.amp;
   }
 
-  _updateObject(dt, cfg) {
-    const a = this.active;
-    const glow = cfg.glow;
+  _updateLowpoly(cfg) {
+    const lp = this.active.lowpoly;
+    const p = cfg.lowpoly || {};
+    const swingBase = p.swing != null ? p.swing : 0.34;
+    const bobBase = p.bob != null ? p.bob : 0.016;
 
-    // 자기 축으로 천천히 회전 — 이동 방향(root.rotation.y)과 더해집니다
-    const rate = (a.spinRate || 0.2) * (1 - 0.3 * this.amp);
-    a.spin.rotation.y += dt * rate;
+    const a = this.amp;
+    const s = Math.sin(this.phase);
+    const br = Math.sin(this.time * 1.7); // 숨쉬기
 
-    // 걷는 동안의 아주 작은 흔들림 + 멈춰 있을 때의 느린 부유
-    const bob = Math.abs(Math.sin(this.phase)) * cfg.bob * (a.bobScale || 0.6) * this.amp;
-    const float = Math.sin(this.time * 0.9) * 0.008 * (1 - this.amp);
+    // 걷기 — 짧은 다리라 각은 조금 크게, 팔은 그 반대로 가볍게
+    const swing = swingBase * a;
+    lp.legL.rotation.x = s * swing;
+    lp.legR.rotation.x = -s * swing;
+    lp.armL.rotation.x = -s * swing * 0.8;
+    lp.armR.rotation.x = s * swing * 0.8;
+    lp.armL.rotation.z = -0.24 - Math.abs(s) * 0.03 * a;
+    lp.armR.rotation.z = 0.24 + Math.abs(s) * 0.03 * a;
+
+    // 통통 튀는 걸음 + 살짝 좌우로 흔들(귀여운 인상)
+    const bob = Math.abs(s) * bobBase * a;
     this._bob = bob;
-    this.body.position.y = bob + float;
-    this.body.rotation.z = Math.sin(this.time * 0.63) * 0.006;
-    this.body.rotation.x = -0.028 * this.amp;
+    this.body.position.y = bob + br * 0.0035 * (1 - a);
+    this.body.rotation.z = s * 0.022 * a;
+    this.body.rotation.x = -0.03 * a;
 
-    // 빛 떨림
-    const pulse = 1 + Math.sin(this.time * 1.35) * (glow.pulse != null ? glow.pulse : 0.18);
-    this.light.intensity = this.lightBase * pulse;
-    if (a.core) a.core.scale.setScalar(pulse);
-    if (a.halo) {
-      const base = glow.haloOpacity != null ? glow.haloOpacity : 0.55;
-      a.halo.material.opacity = base * (0.9 + (pulse - 1) * 0.6);
-      a.halo.scale.setScalar((glow.haloSize || 0.55) * (0.96 + (pulse - 1) * 0.5));
-    }
-    if (a.band) a.band.material.opacity = 0.72 + (pulse - 1) * 0.5;
+    // 서 있을 때: 아주 얕은 숨쉬기(몸통) + 머리 살짝 갸웃
+    const idle = 1 - a;
+    lp.torso.scale.y = lp.torsoBaseY * (1 + br * 0.012 * idle);
+    lp.head.rotation.x = br * 0.03 * idle - 0.02 * a;
+    lp.head.rotation.z = Math.sin(this.time * 0.8) * 0.022 * idle;
   }
 
   setPosition(x, z) {
