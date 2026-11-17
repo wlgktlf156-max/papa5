@@ -186,16 +186,19 @@ export class Avatar {
     const legL = makeLeg(-1);
     const legR = makeLeg(1);
 
-    /* 머리 — 목(0.90)에서 회전. 머리 지름 0.29 = 키의 약 1/4 */
+    /* 골반 — 몸통 아래와 다리 사이를 메우는 짧은 반바지 */
+    addPart(body, sph(0.13, 7, 4), M.pants, 0, 0.43, 0, [1, 0.58, 0.9]);
+
+    /* 머리 — 목(0.90)에서 회전. 머리 지름 0.30 = 키의 약 1/4 */
     const head = new THREE.Group();
     head.position.y = 0.9 * S;
     body.add(head);
     addPart(head, cyl(0.045, 0.052, 0.07), M.skin, 0, -0.005, 0); // 목
-    addPart(head, sph(0.145, 7, 5), M.skin, 0, 0.145, 0, [1, 1, 0.98], true); // 머리
+    addPart(head, sph(0.152, 7, 5), M.skin, 0, 0.145, 0, [1, 1, 0.98], true); // 머리 (지름 0.30)
     // 머리카락 — 머리 위쪽만 덮는 낮은 해상도의 반구
     const hair = addPart(
       head,
-      new THREE.SphereGeometry(0.153, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.42),
+      new THREE.SphereGeometry(0.159, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.44),
       M.hair,
       0,
       0.145,
@@ -204,9 +207,9 @@ export class Avatar {
     );
     hair.rotation.x = -0.04;
     // 점 눈 두 개 (표정은 이게 전부)
-    const eyeGeo = sph(0.023, 5, 3);
-    addPart(head, eyeGeo, M.eye, -0.052, 0.147, -0.126, [1, 1.2, 0.55]);
-    addPart(head, eyeGeo, M.eye, 0.052, 0.147, -0.126, [1, 1.2, 0.55]);
+    const eyeGeo = sph(0.019, 6, 4);
+    addPart(head, eyeGeo, M.eye, -0.05, 0.118, -0.143, [1, 1.15, 0.5]);
+    addPart(head, eyeGeo, M.eye, 0.05, 0.118, -0.143, [1, 1.15, 0.5]);
 
     /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
     const makeArm = (side) => {
