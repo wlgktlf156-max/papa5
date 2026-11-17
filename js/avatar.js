@@ -73,7 +73,8 @@ export class Avatar {
       pants: surface(pal.pants != null ? pal.pants : 0x6f8290),
       hair: surface(pal.hair != null ? pal.hair : 0x6e5a49),
       shoe: surface(pal.shoe != null ? pal.shoe : 0x3f4750),
-      eye: surface(pal.eye != null ? pal.eye : 0x2b2724),
+      eye: surface(pal.eye != null ? pal.eye : 0x3a312c),
+      glint: new THREE.MeshBasicMaterial({ color: pal.glint != null ? pal.glint : 0xfdf6e8 }),
     };
 
     // 머리 위의 빛: 포인트 라이트 1개를 공유합니다(모드별로 세기만 조절).
@@ -193,7 +194,7 @@ export class Avatar {
     const head = new THREE.Group();
     head.position.y = 0.9 * S;
     body.add(head);
-    addPart(head, cyl(0.045, 0.052, 0.07), M.skin, 0, -0.005, 0); // 목
+    addPart(head, cyl(0.05, 0.056, 0.06), M.skin, 0, -0.008, 0); // 목
     addPart(head, sph(0.152, 7, 5), M.skin, 0, 0.145, 0, [1, 1, 0.98], true); // 머리 (지름 0.30)
     // 머리카락 — 머리 위쪽만 덮는 낮은 해상도의 반구
     const hair = addPart(
@@ -207,18 +208,21 @@ export class Avatar {
     );
     hair.rotation.x = -0.04;
     // 점 눈 두 개 (표정은 이게 전부)
-    const eyeGeo = sph(0.019, 6, 4);
-    addPart(head, eyeGeo, M.eye, -0.05, 0.118, -0.143, [1, 1.15, 0.5]);
-    addPart(head, eyeGeo, M.eye, 0.05, 0.118, -0.143, [1, 1.15, 0.5]);
+    const eyeGeo = sph(0.016, 6, 4);
+    const glintGeo = sph(0.005, 5, 3);
+    for (const sx of [-1, 1]) {
+      addPart(head, eyeGeo, M.eye, sx * 0.045, 0.116, -0.146, [1, 1.15, 0.5]);
+      addPart(head, glintGeo, M.glint, sx * 0.0495, 0.123, -0.1545, [1, 1, 0.6], false);
+    }
 
     /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
     const makeArm = (side) => {
       const pivot = new THREE.Group();
-      pivot.position.set(side * 0.152 * S, 0.775 * S, 0);
-      pivot.rotation.z = side * 0.26; // 팔을 살짝 벌립니다
+      pivot.position.set(side * 0.138 * S, 0.775 * S, 0);
+      pivot.rotation.z = side * 0.22; // 팔을 살짝 벌립니다
       body.add(pivot);
-      addPart(pivot, cyl(0.046, 0.04, 0.27), M.shirt, 0, -0.135, 0);
-      addPart(pivot, sph(0.047, 6, 4), M.skin, 0, -0.282, 0);
+      addPart(pivot, cyl(0.042, 0.036, 0.25), M.shirt, 0, -0.125, 0);
+      addPart(pivot, sph(0.043, 6, 4), M.skin, 0, -0.258, 0);
       return pivot;
     };
     const armL = makeArm(-1);
@@ -367,8 +371,8 @@ export class Avatar {
     lp.legR.rotation.x = -s * swing;
     lp.armL.rotation.x = -s * swing * 0.8;
     lp.armR.rotation.x = s * swing * 0.8;
-    lp.armL.rotation.z = -0.26 - Math.abs(s) * 0.03 * a;
-    lp.armR.rotation.z = 0.26 + Math.abs(s) * 0.03 * a;
+    lp.armL.rotation.z = -0.22 - Math.abs(s) * 0.03 * a;
+    lp.armR.rotation.z = 0.22 + Math.abs(s) * 0.03 * a;
 
     // 통통 튀는 걸음 + 살짝 좌우로 흔들(귀여운 인상)
     const bob = Math.abs(s) * bobBase * a;

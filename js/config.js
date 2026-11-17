@@ -82,11 +82,12 @@ export const CONFIG = {
       lightIntensity: 0.42, // 머리 위 점광 세기 (0 = 끔)
       palette: {
         skin: 0xf1ddc7, // 얼굴·손 — 따뜻한 살색
-        shirt: 0xa7bccb, // 몸통·팔 — 파스텔 블루그레이
-        pants: 0x6f8290, // 다리 — 한 톤 진한 블루그레이
-        shoe: 0x3f4750, // 신발
+        shirt: 0x9db4c6, // 몸통·팔 — 파스텔 블루그레이
+        pants: 0x657c8e, // 다리 — 한 톤 진한 블루그레이
+        shoe: 0x3b434b, // 신발
         hair: 0x6e5a49, // 머리카락 — 따뜻한 갈색
-        eye: 0x2b2724, // 점 눈
+        eye: 0x3a312c, // 점 눈
+        glint: 0xfdf6e8, // 눈에 찍는 작은 흰 점(눈빛)
       },
     },
 
