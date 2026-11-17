@@ -191,19 +191,21 @@ theme:  { wall, floor, ceiling, frame, mat, bench, accent, fog ... }
 
 ## 8. 검증 기록
 
-### 2026-11-17 — 3단계: 추상 오브제 아바타 3종 (데-모 참고)
+### 2026-11-17 — 4단계: 관람객 캐릭터를 로우폴리 인체로 교체
 
-로컬 HTTP 서버로 이 폴더를 그대로 서비스하고 헤드리스 Chromium(Playwright, SwiftShader WebGL)으로 확인.
+GitHub Pages 라이브 주소(`https://wlgktlf156-max.github.io/papa5/`)에서 확인했습니다.
 
-- 4가지 모드 모두 콘솔 오류 0건 · `__papaErrors` 0건 · HTTP 4xx 0건 · WebGL 정상(그리기 56~74회, 삼각형 604~2,494개)
-- `?avatar=prism`·`cylinder`·`slab`·`human` 4개 주소 모두 해당 캐릭터로 열림, 파라미터가 없으면 `prism`
-- 오른쪽 아래 버튼(프리즘/원기둥/판/사람)으로 즉시 전환 + 주소 갱신, 전환 뒤 드래그 시점 조작도 정상(camYaw 2.64 → 3.22)
-- 오브제 자전은 이동 방향 회전과 별개: 정지 2초에 0.05 rad, 이동 중에도 +0.049 rad 계속 증가
-- 이동: `D` 1.5초 → x 0 → 0.6m, 캐릭터 yaw 0 → −1.47 rad(이동 방향으로 회전)
-- 모바일 390×844: 버튼 46~51×40px, 조이스틱·「작품 보기」와 겹치지 않음, 탭으로 전환 확인
-- 기존 기능 회귀 없음: 작품 17점·근접 감지 17개, 사람 모드 걷기(다리 회전 0.48 rad)
-- 스크린샷: `screenshots/avatar-prism.png` · `avatar-cylinder.png` · `avatar-slab.png` ·
-  `avatar-human.png` (모바일: `avatar-mobile-slab.png`, `avatar-mobile-cylinder.png`)
+- 추상 오브제 3종(프리즘·원기둥·판)과 오른쪽 아래 전환 버튼을 없애고, 관람객 캐릭터는
+  **로우폴리 인체 하나**로 정리했습니다. 기본값은 `avatar.mode: 'lowpoly'`.
+- 기본 주소 → 로우폴리 인체 · `?avatar=prism`·`cylinder`·`slab` 같은 없어진 값 → 로우폴리로 열림
+  (오브제는 다시 나오지 않음) · `?avatar=human` → 롤백용 이전 사람 실루엣
+- 캐릭터: 키 1.21m(사람 실루엣 1.72m의 약 70%) · 머리 지름 0.30m(키의 약 1/4, 약 4등신) ·
+  삼각형 561개(발밑 그림자 평면 포함, 몸통 18개 메시) · flatShading · 발이 바닥에 붙음(y 0.00)
+- 콘솔 오류 0건 · `__papaErrors` 0건 · HTTP 4xx 0건 (씬 전체 삼각형 891개)
+- 회귀: 작품 17점·근접 감지 17개, 작품 앞 `E`로 정보 카드 열림, 조이스틱 이동·이동 방향 회전 정상
+- 스크린샷: `screenshots/avatar-lowpoly.png`(캐릭터 확인용 3/4 앞모습) ·
+  `avatar-lowpoly-hall.png`(기본 시점) · `avatar-lowpoly-walk.png`(걷는 중) ·
+  `avatar-human-rollback.png`(`?avatar=human`)
 
 ### 2026-11-16 — 1단계 빈 전시장 데모
 
