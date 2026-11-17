@@ -144,7 +144,6 @@ export class Avatar {
     const H = lp.height || LP_BASE_H;
     const S = H / LP_BASE_H; // 아래 수치는 LP_BASE_H 기준, 키 설정에 맞춰 배율만 곱합니다
     const M = this.mats;
-    const rimMat = this.rimMat;
 
     const group = new THREE.Group();
     group.name = 'avatar-lowpoly';
@@ -156,23 +155,17 @@ export class Avatar {
     const cyl = (rt, rb, h, seg = 6) => new THREE.CylinderGeometry(rt, rb, h, seg, 1);
     const sph = (r, w = 7, h = 5) => new THREE.SphereGeometry(r, w, h);
 
-    const addPart = (parent, geom, mat, x, y, z, scale, shell = false) => {
+    const addPart = (parent, geom, mat, x, y, z, scale) => {
       const m = new THREE.Mesh(geom, mat);
       m.position.set(x * S, y * S, z * S);
       if (scale) m.scale.set(scale[0] * S, scale[1] * S, scale[2] * S);
       else m.scale.setScalar(S);
       parent.add(m);
-      if (shell) {
-        const sh = new THREE.Mesh(geom, rimMat);
-        sh.scale.setScalar(1.05);
-        sh.renderOrder = -1;
-        m.add(sh);
-      }
       return m;
     };
 
     /* 몸통 — 위아래가 둥근 달걀형(통통하게), 0.42 ~ 0.86 */
-    const torso = addPart(body, sph(0.17, 7, 5), M.shirt, 0, 0.64, 0, [1, 1.3, 0.88], true);
+    const torso = addPart(body, sph(0.17, 7, 5), M.shirt, 0, 0.64, 0, [1, 1.3, 0.88]);
 
     /* 다리 — 짧고 통통하게. 골반(0.44)에서 회전 */
     const makeLeg = (side) => {
@@ -195,7 +188,7 @@ export class Avatar {
     head.position.y = 0.9 * S;
     body.add(head);
     addPart(head, cyl(0.05, 0.056, 0.06), M.skin, 0, -0.008, 0); // 목
-    addPart(head, sph(0.152, 7, 5), M.skin, 0, 0.145, 0, [1, 1, 0.98], true); // 머리 (지름 0.30)
+    addPart(head, sph(0.152, 7, 5), M.skin, 0, 0.145, 0, [1, 1, 0.98]); // 머리 (지름 0.30)
     // 머리카락 — 머리 위쪽만 덮는 낮은 해상도의 반구
     const hair = addPart(
       head,
@@ -212,17 +205,17 @@ export class Avatar {
     const glintGeo = sph(0.005, 5, 3);
     for (const sx of [-1, 1]) {
       addPart(head, eyeGeo, M.eye, sx * 0.045, 0.116, -0.146, [1, 1.15, 0.5]);
-      addPart(head, glintGeo, M.glint, sx * 0.0495, 0.123, -0.1545, [1, 1, 0.6], false);
+      addPart(head, glintGeo, M.glint, sx * 0.0495, 0.123, -0.1545, [1, 1, 0.6]);
     }
 
     /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
     const makeArm = (side) => {
       const pivot = new THREE.Group();
-      pivot.position.set(side * 0.138 * S, 0.775 * S, 0);
-      pivot.rotation.z = side * 0.22; // 팔을 살짝 벌립니다
+      pivot.position.set(side * 0.126 * S, 0.775 * S, 0);
+      pivot.rotation.z = side * 0.18; // 팔을 살짝 벌립니다
       body.add(pivot);
-      addPart(pivot, cyl(0.042, 0.036, 0.25), M.shirt, 0, -0.125, 0);
-      addPart(pivot, sph(0.043, 6, 4), M.skin, 0, -0.258, 0);
+      addPart(pivot, cyl(0.036, 0.032, 0.22), M.shirt, 0, -0.11, 0);
+      addPart(pivot, sph(0.038, 6, 4), M.skin, 0, -0.228, 0);
       return pivot;
     };
     const armL = makeArm(-1);
@@ -371,8 +364,8 @@ export class Avatar {
     lp.legR.rotation.x = -s * swing;
     lp.armL.rotation.x = -s * swing * 0.8;
     lp.armR.rotation.x = s * swing * 0.8;
-    lp.armL.rotation.z = -0.22 - Math.abs(s) * 0.03 * a;
-    lp.armR.rotation.z = 0.22 + Math.abs(s) * 0.03 * a;
+    lp.armL.rotation.z = -0.18 - Math.abs(s) * 0.03 * a;
+    lp.armR.rotation.z = 0.18 + Math.abs(s) * 0.03 * a;
 
     // 통통 튀는 걸음 + 살짝 좌우로 흔들(귀여운 인상)
     const bob = Math.abs(s) * bobBase * a;
