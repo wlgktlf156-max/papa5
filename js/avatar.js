@@ -165,7 +165,7 @@ export class Avatar {
     };
 
     /* 몸통 — 위아래가 둥근 달걀형(통통하게), 0.42 ~ 0.86 */
-    const torso = addPart(body, sph(0.15, 7, 5), M.shirt, 0, 0.64, 0, [1, 1.42, 0.92]);
+    const torso = addPart(body, sph(0.15, 7, 5), M.shirt, 0, 0.64, 0, [1, 1.45, 0.92]);
 
     /* 다리 — 짧고 통통하게. 골반(0.44)에서 회전 */
     const makeLeg = (side) => {
@@ -211,7 +211,7 @@ export class Avatar {
     /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
     const makeArm = (side) => {
       const pivot = new THREE.Group();
-      pivot.position.set(side * 0.145 * S, 0.75 * S, 0);
+      pivot.position.set(side * 0.145 * S, 0.74 * S, 0);
       pivot.rotation.z = side * 0.22; // 팔을 살짝 벌립니다
       body.add(pivot);
       addPart(pivot, cyl(0.036, 0.031, 0.24), M.shirt, 0, -0.12, 0);
@@ -224,7 +224,7 @@ export class Avatar {
     return {
       group,
       spin,
-      lowpoly: { body, torso, head, armL, armR, legL, legR, torsoBaseY: 1.3 * S },
+      lowpoly: { body, torso, head, armL, armR, legL, legR, torsoBaseY: torso.scale.y },
       lightHeight: H + 0.34,
       lightIntensity: lp.lightIntensity != null ? lp.lightIntensity : cfg.glow.lightIntensity,
       shadowScale: H / H_REF * 0.95,
