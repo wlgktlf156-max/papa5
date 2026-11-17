@@ -79,7 +79,7 @@ export const CONFIG = {
       height: 1.2,
       swing: 0.34, // 걸을 때 다리 스윙 각도(rad)
       bob: 0.016, // 걸을 때 통통 튀는 높이(m)
-      lightIntensity: 0.6, // 머리 위 점광 세기 (0 = 끔)
+      lightIntensity: 0.42, // 머리 위 점광 세기 (0 = 끔)
       palette: {
         skin: 0xf1ddc7, // 얼굴·손 — 따뜻한 살색
         shirt: 0xa7bccb, // 몸통·팔 — 파스텔 블루그레이
@@ -102,8 +102,8 @@ export const CONFIG = {
     // 머리 위의 빛 — 로우폴리 인체가 쓰는 따뜻한 점광 1개
     glow: {
       lightColor: 0xffcf96,
-      lightIntensity: 0.6, // lowpoly.lightIntensity 가 없을 때의 기본값
-      lightDistance: 2.6, // 빛이 닿는 거리(m)
+      lightIntensity: 0.42, // lowpoly.lightIntensity 가 없을 때의 기본값
+      lightDistance: 2.2, // 빛이 닿는 거리(m)
     },
   },
 

@@ -195,7 +195,7 @@ export class Avatar {
     // 머리카락 — 머리 위쪽만 덮는 낮은 해상도의 반구
     const hair = addPart(
       head,
-      new THREE.SphereGeometry(0.152, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.56),
+      new THREE.SphereGeometry(0.153, 7, 3, 0, Math.PI * 2, 0, Math.PI * 0.42),
       M.hair,
       0,
       0.145,
@@ -211,11 +211,11 @@ export class Avatar {
     /* 팔 — 어깨(0.80)에서 회전, 살짝 벌린 자세 */
     const makeArm = (side) => {
       const pivot = new THREE.Group();
-      pivot.position.set(side * 0.15 * S, 0.8 * S, 0);
-      pivot.rotation.z = side * 0.24; // 팔을 살짝 벌립니다
+      pivot.position.set(side * 0.152 * S, 0.775 * S, 0);
+      pivot.rotation.z = side * 0.26; // 팔을 살짝 벌립니다
       body.add(pivot);
-      addPart(pivot, cyl(0.046, 0.04, 0.28), M.shirt, 0, -0.14, 0);
-      addPart(pivot, sph(0.047, 6, 4), M.skin, 0, -0.295, 0);
+      addPart(pivot, cyl(0.046, 0.04, 0.27), M.shirt, 0, -0.135, 0);
+      addPart(pivot, sph(0.047, 6, 4), M.skin, 0, -0.282, 0);
       return pivot;
     };
     const armL = makeArm(-1);
@@ -225,7 +225,7 @@ export class Avatar {
       group,
       spin,
       lowpoly: { body, torso, head, armL, armR, legL, legR, torsoBaseY: 1.3 * S },
-      lightHeight: H + 0.05,
+      lightHeight: H + 0.34,
       lightIntensity: lp.lightIntensity != null ? lp.lightIntensity : cfg.glow.lightIntensity,
       shadowScale: H / H_REF * 0.95,
     };
@@ -364,8 +364,8 @@ export class Avatar {
     lp.legR.rotation.x = -s * swing;
     lp.armL.rotation.x = -s * swing * 0.8;
     lp.armR.rotation.x = s * swing * 0.8;
-    lp.armL.rotation.z = -0.24 - Math.abs(s) * 0.03 * a;
-    lp.armR.rotation.z = 0.24 + Math.abs(s) * 0.03 * a;
+    lp.armL.rotation.z = -0.26 - Math.abs(s) * 0.03 * a;
+    lp.armR.rotation.z = 0.26 + Math.abs(s) * 0.03 * a;
 
     // 통통 튀는 걸음 + 살짝 좌우로 흔들(귀여운 인상)
     const bob = Math.abs(s) * bobBase * a;
